@@ -141,7 +141,42 @@ function news(){
     };
   });
 }
-function messages(){VIEW.innerHTML=`<h1>Чат</h1><div class="card"><input placeholder="Найдите пользователя по @"><button class="ghost small">ЛС</button> <button class="ghost small">Каналы</button><p class="muted" style="margin-top:14px">Личных сообщений пока нет.</p></div>`}
+let dmSelected=null,dmQuery='';
+async function messages(){
+  const me=user.id;
+  const {data}=await sb.from('messages').select('id,user_id,content,created_at').eq('hidden',true).order('created_at',{ascending:false}).limit(200);
+  const dms=(data||[]).map(r=>{try{const j=JSON.parse(r.content);if(j.k!=='dm')return null;return{id:r.id,from_me:r.user_id===me,other:r.user_id===me?j.to:r.user_id,text:j.text||'',images:Array.isArray(j.i)?j.i:[],created_at:r.created_at}}catch{return null}}).filter(Boolean);
+  const ids=[...new Set(dms.map(d=>d.other))];
+  const {data:profiles}=ids.length?await sb.from('profiles').select('id,username').in('id',ids):{data:[]};
+  const names=new Map((profiles||[]).map(p=>[p.id,p.username]));
+  if(dmSelected&&!ids.includes(dmSelected))dmSelected=null;
+  let found=[];
+  if(dmQuery.trim()){const q=dmQuery.replace(/^@/,'');const r=await sb.from('profiles').select('id,username').ilike('username',q+'%').limit(10);found=r.data||[]}
+  let body='';
+  if(dmSelected){
+    const thread=dms.filter(d=>d.other===dmSelected).reverse();
+    body=`<button class="ghost small" id="dback">← Все диалоги</button><h2>@${esc(names.get(dmSelected)||'')}</h2>
+      <div class="card">${thread.map(d=>`<div style="text-align:${d.from_me?'right':'left'};margin:8px 0"><div style="display:inline-block;background:${d.from_me?'#fff;color:#000':'#26262c'};padding:8px 12px;border-radius:16px;text-align:left">${esc(d.text)}${d.images.map(u=>`<img class="attach" src="${esc(u)}">`).join('')}</div><div class="meta">${esc(new Date(d.created_at).toLocaleString('ru-RU'))}</div></div>`).join('')||'<p class="muted">Сообщений пока нет.</p>'}</div>
+      <div class="card"><textarea id="dtx" placeholder="Сообщение…"></textarea><input type="file" id="dfile" accept="image/*"><button id="dsend" class="small">Отправить</button><p class="err" id="derr"></p></div>`;
+  }else{
+    body=`<p class="muted">Диалоги</p>`+(ids.map(id=>`<div class="card"><button id="dm-${id}" class="ghost">@${esc(names.get(id)||'')}</button><p class="muted">${esc(dms.find(d=>d.other===id)?.text||'')}</p></div>`).join('')||'<p class="muted">Диалогов пока нет. Найдите пользователя по @ выше.</p>');
+  }
+  VIEW.innerHTML=`<h1>Чат</h1><div class="card"><input id="dq" placeholder="Найдите пользователя по @" value="${esc(dmQuery)}"><button class="small" id="dfind">Найти</button>
+    ${found.length?`<div style="margin-top:10px">${found.map(f=>`<button class="ghost small" id="sel-${f.id}" style="margin:2px">@${esc(f.username)}</button>`).join('')}</div>`:''}</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px"><button class="small">ЛС</button><button class="ghost small" id="chan">Каналы</button></div>${body}`;
+  document.getElementById('dfind').onclick=()=>{dmQuery=document.getElementById('dq').value;messages()};
+  document.getElementById('chan').onclick=()=>{VIEW.innerHTML='<h1>Чат</h1><div class="card"><p class="muted">Каналов пока нет.</p></div>'};
+  found.forEach(f=>document.getElementById('sel-'+f.id).onclick=()=>{dmSelected=f.id;dmQuery='';messages()});
+  ids.forEach(id=>document.getElementById('dm-'+id).onclick=()=>{dmSelected=id;messages()});
+  const back=document.getElementById('dback');if(back)back.onclick=()=>{dmSelected=null;messages()};
+  const send=document.getElementById('dsend');if(send)send.onclick=async()=>{
+    const t=document.getElementById('dtx').value.trim(),f=document.getElementById('dfile').files[0],e=document.getElementById('derr');e.textContent='';
+    if(!t&&!f)return;const urls=[];
+    if(f){const b=await compress(f);const up=await sb.storage.from('posts').upload(`${me}/${Date.now()}.webp`,b,{contentType:'image/webp'});if(!up.error)urls.push(sb.storage.from('posts').getPublicUrl(up.data.path).data.publicUrl)}
+    const {error}=await sb.from('messages').insert({user_id:me,hidden:true,content:JSON.stringify({k:'dm',to:dmSelected,text:t,i:urls})});
+    if(error)e.textContent=error.message;else messages();
+  };
+}
 function rules(){VIEW.innerHTML=`<h1>Правила</h1><div class="card"><ol style="line-height:1.9">
 <li><b>Уважайте других.</b> Оскорбления, травля и дискриминация запрещены.</li>
 <li><b>Без спама.</b> Не публикуйте одно и то же многократно и не рекламируйте сторонние сервисы.</li>
