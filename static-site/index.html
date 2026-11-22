@@ -14,8 +14,10 @@ a{color:inherit;text-decoration:none}
 button,textarea,input,select{font-family:inherit}
 .top{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:var(--surface);border-bottom:1px solid var(--line)}
 .brand{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:700}
-.brand img{width:34px;height:34px}
-html.dark .brand img,html.dark .welcome-logo{filter:invert(1)}
+.side-brand{display:flex;align-items:center;gap:8px;padding:4px 10px 18px}
+.side-brand img{width:40px;height:40px}
+.vbadge{border:1px solid var(--line);border-radius:999px;padding:2px 8px;font-size:11px;color:var(--muted)}
+html.dark .side-brand img,html.dark .welcome-logo{filter:invert(1)}
 .muted{color:var(--muted);font-size:12px}
 .wrap{display:flex;min-height:calc(100vh - 56px)}
 .side{width:220px;background:var(--surface);border-right:1px solid var(--line);padding:18px 12px;flex-shrink:0}
@@ -50,20 +52,23 @@ h2{font-size:20px;margin:0 0 12px}
 </head>
 <body>
 <div class="top">
-  <a class="brand" href="#/welcome"><img src="https://raw.githubusercontent.com/nikigaro/roflset/main/public/logo-rofset.png" alt=""><span>РофлСеть</span></a>
+  <div></div>
   <span class="muted">by MURS</span>
 </div>
 <div class="wrap">
-  <aside class="side" id="side"></aside>
+  <aside class="side">
+    <div class="side-brand"><a href="#/welcome"><img src="https://raw.githubusercontent.com/nikigaro/roflset/main/public/logo-rofset.png?v=3" alt=""></a><span class="vbadge">v1</span></div>
+    <nav id="nav"></nav>
+  </aside>
   <div class="main" id="view"></div>
 </div>
-<button id="themeBtn2" aria-label="Переключить тему"><img src="https://raw.githubusercontent.com/nikigaro/roflset/main/public/theme-icon.png" alt=""></button>
+<button id="themeBtn2" aria-label="Переключить тему"><img src="https://raw.githubusercontent.com/nikigaro/roflset/main/public/theme-icon.png?v=3" alt=""></button>
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const SUPA='https://cskcfmdbhcefafembpco.supabase.co';
 const PUB='sb_publishable_etj0lO9O_ydHOAkVvUcMxw_-mxhs1tg';
 const sb=createClient(SUPA,PUB);
-const VIEW=document.getElementById('view'),SIDE=document.getElementById('side');
+const VIEW=document.getElementById('view'),NAV=document.getElementById('nav');
 const RAW='https://raw.githubusercontent.com/nikigaro/roflset/main/public/icons/';
 const email=u=>u+'@users.prostoset.test';
 const esc=s=>String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
@@ -78,7 +83,7 @@ async function compress(file){
 function nav(){
   const h=location.hash||'#/welcome';
   const items=[['#/rules','Правила','news'],['#/chat','Стена','wall'],['#/news','Новости','news'],['#/messages','Чат','chat'],['#/profile','Профиль','profile']];
-  SIDE.innerHTML=items.map(([href,l,i])=>`<a href="${href}" class="${h===href?'active':''}"><img src="${RAW}${i}.png" alt="">${l}</a>`).join('');
+  NAV.innerHTML=items.map(([href,l,i])=>`<a href="${href}" class="${h===href?'active':''}"><img src="${RAW}${i}.png?v=3" alt="">${l}</a>`).join('');
 }
 function route(){
   nav();
@@ -96,7 +101,7 @@ function route(){
 }
 function welcome(){
   VIEW.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;gap:18px">
-  <img class="welcome-logo" src="https://raw.githubusercontent.com/nikigaro/roflset/main/public/logo-rofset.png" style="width:80px;height:80px">
+  <img class="welcome-logo" src="https://raw.githubusercontent.com/nikigaro/roflset/main/public/logo-rofset.png?v=3" style="width:80px;height:80px">
   <h1 style="margin:0">РофлСеть</h1>
   <a href="#/login"><button>Войти</button></a><a href="#/register"><button class="ghost">Регистрация</button></a>
   <label class="muted"><input type="checkbox" style="width:auto" id="rem"> Запомнить меня</label></div>`;
@@ -186,13 +191,12 @@ async function messages(){
     if(error)e.textContent=error.message;else messages();
   };
 }
-function rules(){VIEW.innerHTML=`<h1>Правила</h1><div class="card"><ol style="line-height:1.9">
-<li><b>Уважайте других.</b> Оскорбления, травля и дискриминация запрещены.</li>
-<li><b>Без спама.</b> Не публикуйте одно и то же многократно и не рекламируйте сторонние сервисы.</li>
-<li><b>Только свой контент.</b> Не выдавайте чужие работы за свои.</li>
-<li><b>Без опасного содержимого.</b> Угрозы, персональные данные и вредоносные ссылки удаляются.</li>
-<li><b>Жалобы.</b> Нарушения можно отметить кнопкой «Пожаловаться» под записью.</li>
-</ol></div>`}
+function rules(){VIEW.innerHTML=`<h1>Правила</h1>
+<div class="card"><b>1. Уважайте других.</b> Оскорбления, травля и дискриминация запрещены.</div>
+<div class="card"><b>2. Без спама.</b> Не публикуйте одно и то же многократно и не рекламируйте сторонние сервисы.</div>
+<div class="card"><b>3. Только свой контент.</b> Не выдавайте чужие работы за свои.</div>
+<div class="card"><b>4. Без опасного содержимого.</b> Угрозы, персональные данные и вредоносные ссылки удаляются.</div>
+<div class="card"><b>5. Жалобы.</b> Нарушения можно отметить кнопкой «Пожаловаться» под записью.</div>`}
 async function profile(){
   const {data:p}=await sb.from('profiles').select('username').eq('id',user.id).maybeSingle();
   const name=p?.username||user.email?.split('@')[0]||'';
@@ -204,7 +208,7 @@ async function profile(){
   <div class="banner" style="background-image:url('${banner}')"></div>
   <div class="card"><div style="display:flex;align-items:center;gap:16px">
     <img class="avatar" src="${avatar}" alt="">
-    <div><p style="margin:0">Имя пользователя: <b>@${esc(name)}</b>${isAdmin?'<img src="'+RAW+'creator.png" style="width:18px;height:18px;vertical-align:middle">':''}</p>
+    <div><p style="margin:0">Имя пользователя: <b>@${esc(name)}</b>${isAdmin?'<img src="'+RAW+'creator.png?v=3" style="width:18px;height:18px;vertical-align:middle">':''}</p>
     <input type="file" id="ava" accept="image/*" class="small"><button class="ghost small" id="saveAva">Аватар</button></div></div></div>
   <div class="card"><h2>Баннер</h2><input type="file" id="ban" accept="image/*"><button class="ghost small" id="saveBan">Сохранить баннер</button><p class="ok" id="m1"></p></div>
   <div class="card"><h2>Обо мне</h2><textarea id="bio" maxlength="300" placeholder="Расскажите о себе…">${esc(meta.bio||'')}</textarea><button id="saveBio" class="small">Сохранить</button><p class="ok" id="m2"></p></div>
