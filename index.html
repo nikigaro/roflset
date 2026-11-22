@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>РофлСеть</title>
+<style>
+@font-face{font-family:Subkultur;src:url('https://raw.githubusercontent.com/nikigaro/roflset/main/src/fonts/Subkultur-Regular-Trial.ttf') format('truetype');font-display:swap}
+:root{--bg:#fff;--fg:#000;--surface:#f0f0f0;--card:#fff;--input:#fff;--line:#dedede;--muted:#666;--hover:#e5e5e5;--btn:#000;--btn-fg:#fff}
+html.dark{--bg:#0e0e10;--fg:#fff;--surface:#18181b;--card:#1f1f23;--input:#26262c;--line:#2a2a2e;--muted:#8b8b93;--hover:#242428;--btn:#fff;--btn-fg:#000}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:Subkultur,sans-serif;min-height:100vh}
+a{color:inherit;text-decoration:none}
+button,textarea,input,select{font-family:inherit}
+.top{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:700}
+.side-brand{display:flex;align-items:center;gap:8px;padding:4px 10px 18px}
+.side-brand img{width:58px;height:58px}
+.vbadge{border:1px solid var(--line);border-radius:999px;padding:2px 8px;font-size:11px;color:var(--muted)}
+html.dark .side-brand img,html.dark .welcome-logo{filter:invert(1)}
+.muted{color:var(--muted);font-size:12px}
+.wrap{display:flex;min-height:100vh}
+.side{width:220px;background:var(--surface);border-right:1px solid var(--line);padding:18px 12px;flex-shrink:0}
+.side a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:999px;margin-bottom:4px}
+.side a.active,.side a:hover{background:var(--hover)}
+.side img{width:22px;height:22px}
+.side .side-brand img{width:58px;height:58px}
+.main{flex:1;padding:28px;max-width:920px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}
+input,textarea,select{width:100%;background:var(--input);border:1px solid var(--line);border-radius:10px;color:var(--fg);padding:10px 12px;outline:none;margin-bottom:10px}
+textarea{min-height:90px;resize:vertical}
+button{background:var(--btn);color:var(--btn-fg);border:0;border-radius:999px;padding:8px 18px;cursor:pointer;font-weight:700}
+button.ghost{background:transparent;color:var(--fg);border:1px solid var(--muted)}
+button.small{padding:5px 12px;font-size:12px}
+button:disabled{opacity:.4;cursor:not-allowed}
+.err{color:#ff6b6b;font-size:14px;margin:8px 0}
+.ok{color:#39a845;font-size:14px;margin:8px 0}
+html.dark .ok{color:#b9ff2e}
+.post{border-bottom:1px solid var(--line);padding:12px 0}
+.post p{white-space:pre-wrap;word-break:break-word}
+.meta{color:var(--muted);font-size:11px;margin-top:6px}
+.dot{display:inline-block;width:8px;height:8px;background:#b9ff2e;border-radius:50%;margin-left:8px}
+img.attach{max-width:100%;max-height:260px;border-radius:10px;margin-top:8px}
+h1{font-size:32px;margin:0 0 20px}
+h2{font-size:20px;margin:0 0 12px}
+.avatar{width:80px;height:80px;border-radius:50%;object-fit:cover;background:var(--input)}
+.banner{height:110px;border-radius:12px;background:var(--input);margin-bottom:14px;background-size:cover;background-position:center}
+#themeBtn2{position:fixed;left:16px;bottom:16px;z-index:50;display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:999px;border:1px solid var(--line);background:var(--card);padding:0;cursor:pointer}
+#themeBtn2 img{width:18px;height:18px}
+.bubble-me{background:var(--btn);color:var(--btn-fg)}
+.bubble-other{background:var(--input);color:var(--fg)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <aside class="side">
+    <div class="side-brand"><a href="#/chat"><img src="https://raw.githubusercontent.com/nikigaro/roflset/main/public/logo-rofset.png?v=3" alt=""></a><span class="vbadge">v1</span></div>
+    <nav id="nav"></nav>
+  </aside>
+  <div class="main" id="view"></div>
+</div>
+<button id="themeBtn2" aria-label="Переключить тему"><img src="https://raw.githubusercontent.com/nikigaro/roflset/main/public/theme-icon.png?v=3" alt=""></button>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+const SUPA='https://cskcfmdbhcefafembpco.supabase.co';
+const PUB='sb_publishable_etj0lO9O_ydHOAkVvUcMxw_-mxhs1tg';
+const sb=createClient(SUPA,PUB);
+const VIEW=document.getElementById('view'),NAV=document.getElementById('nav');
+const RAW='https://raw.githubusercontent.com/nikigaro/roflset/main/public/icons/';
+const email=u=>u+'@users.prostoset.test';
+const esc=s=>String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+let user=null;
+
+async function compress(file){
+  const bmp=await createImageBitmap(file);const s=Math.min(1,256/Math.max(bmp.width,bmp.height));
+  const c=document.createElement('canvas');c.width=Math.round(bmp.width*s);c.height=Math.round(bmp.height*s);
+  c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+  return new Promise(r=>c.toBlob(r,'image/webp',0.8));
+}
+function nav(){
+  const h=location.hash||'#/welcome';
+  const items=[['#/rules','Правила','news'],['#/chat','Стена','wall'],['#/news','Новости','news'],['#/messages','Чат','chat'],['#/profile','Профиль','profile']];
+  NAV.innerHTML=items.map(([href,l,i])=>`<a href="${href}" class="${h===href?'active':''}"><img src="${RAW}${i}.png?v=3" alt="">${l}</a>`).join('');
+}
+function route(){
+  nav();
+  if(!user&&!['#/welcome','#/login','#/register'].includes(location.hash)){location.hash='#/welcome';return}
+  if(user&&['#/welcome','#/login','#/register','#/'].includes(location.hash)){
+    history.replaceState(null,'','#/chat');
+  }
+  const h=location.hash||'#/chat';
+  if(h==='#/welcome'||h==='#/'||h==='')return welcome();
+  if(h==='#/login')return auth(false);
+  if(h==='#/register')return auth(true);
+  if(h==='#/chat')return chat();
+  if(h==='#/news')return news();
+  if(h==='#/profile')return profile();
+  if(h==='#/messages')return messages();
+  if(h==='#/rules')return rules();
+  welcome();
+}
+function welcome(){
+  VIEW.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;gap:18px">
+  <img class="welcome-logo" src="https://raw.githubusercontent.com/nikigaro/roflset/main/public/logo-rofset.png?v=3" style="width:80px;height:80px">
+  <h1 style="margin:0">РофлСеть</h1>
+  <a href="#/login"><button>Войти</button></a><a href="#/register"><button class="ghost">Регистрация</button></a>
+  <label class="muted"><input type="checkbox" style="width:auto" id="rem"> Запомнить меня</label></div>`;
+}
+function auth(isReg){
+  VIEW.innerHTML=`<div class="card" style="max-width:400px;margin:60px auto"><h2>${isReg?'Регистрация':'Вход'}</h2>
+  <input id="u" placeholder="Юзернейм" maxlength="20"><input id="p" type="password" placeholder="Пароль">
+  <button id="go">${isReg?'Зарегистрироваться':'Войти'}</button><p class="err" id="e"></p>
+  <p class="muted">${isReg?'Уже есть аккаунт? <a href="#/login">Войти</a>':'Нет аккаунта? <a href="#/register">Регистрация</a>'}</p></div>`;
+  document.getElementById('go').onclick=async()=>{
+    const u=document.getElementById('u').value.trim(),p=document.getElementById('p').value,e=document.getElementById('e');e.textContent='';
+    if(!/^[a-z][a-z0-9]{2,19}$/.test(u)){e.textContent='Юзернейм: строчные буквы и цифры, 3–20, первая буква';return}
+    const r=isReg?await sb.auth.signUp({email:email(u),password:p,options:{data:{username:u}}}):await sb.auth.signInWithPassword({email:email(u),password:p});
+    if(r.error){e.textContent=r.error.message;return}
+    location.hash='#/chat';route();
+  };
+}
+async function posts(kind){
+  const {data,error}=await sb.from('messages').select('id,user_id,content,created_at').eq('hidden',false).order('created_at',{ascending:false}).limit(50);
+  if(error)return `<p class="err">${esc(error.message)}</p>`;
+  const rows=(data||[]).filter(r=>{try{return (JSON.parse(r.content).k==='news')===(kind==='news')}catch{return kind!=='news'}});
+  return rows.map(r=>{
+    let text=r.content,img='',title='',ver='';
+    try{const j=JSON.parse(r.content);text=j.text||'';title=j.title||'';ver=j.v||'';if(j.i&&j.i[0])img=`<img class="attach" src="${esc(j.i[0])}">`}catch{}
+    return `<div class="post">${title?`<b>${esc(title)}</b><span class="dot" title="${esc(ver)}"></span>`:''}
+    <p>${esc(text)}</p>${img}<div class="meta">${esc(new Date(r.created_at).toLocaleString('ru-RU'))}</div></div>`;
+  }).join('')||'<p class="muted">Пока пусто.</p>';
+}
+function chat(){
+  posts('post').then(html=>{
+    VIEW.innerHTML=`<h1>Стена</h1><div class="card"><textarea id="txt" placeholder="Пост на стену"></textarea><input type="file" id="file" accept="image/*"><button id="send">Опубликовать</button><p class="err" id="e"></p></div><div class="card">${html}</div>`;
+    document.getElementById('send').onclick=async()=>{
+      const t=document.getElementById('txt').value.trim(),f=document.getElementById('file').files[0],e=document.getElementById('e');e.textContent='';
+      if(!t&&!f)return;
+      const urls=[];
+      if(f){const blob=await compress(f);const up=await sb.storage.from('posts').upload(`${user.id}/${Date.now()}.webp`,blob,{contentType:'image/webp'});if(!up.error)urls.push(sb.storage.from('posts').getPublicUrl(up.data.path).data.publicUrl)}
+      const {error}=await sb.from('messages').insert({user_id:user.id,content:JSON.stringify({t,i:urls})});
+      if(error){e.textContent=error.message;return}
+      chat();
+    };
+  });
+}
+function news(){
+  posts('news').then(html=>{
+    const isAdmin=user?.app_metadata?.role==='admin';
+    VIEW.innerHTML=`<h1>Новости</h1>${isAdmin?`<div class="card"><h2>Новая новость</h2><input id="t" placeholder="Название"><input id="v" placeholder="Версия (v1)"><textarea id="x" placeholder="Текст новости"></textarea><button id="pub">Опубликовать</button><p class="err" id="e"></p></div>`:''}<div class="card">${html}</div>`;
+    if(isAdmin)document.getElementById('pub').onclick=async()=>{
+      const t=document.getElementById('t').value.trim(),v=document.getElementById('v').value.trim(),x=document.getElementById('x').value.trim(),e=document.getElementById('e');
+      const {error}=await sb.from('messages').insert({user_id:user.id,content:JSON.stringify({k:'news',title:t,v,text:x,i:[]})});
+      if(error)e.textContent=error.message;else news();
+    };
+  });
+}
+let dmSelected=null,dmQuery='';
+async function messages(){
+  const me=user.id;
+  const {data}=await sb.from('messages').select('id,user_id,content,created_at').eq('hidden',true).order('created_at',{ascending:false}).limit(200);
+  const dms=(data||[]).map(r=>{try{const j=JSON.parse(r.content);if(j.k!=='dm')return null;return{id:r.id,from_me:r.user_id===me,other:r.user_id===me?j.to:r.user_id,text:j.text||'',images:Array.isArray(j.i)?j.i:[],created_at:r.created_at}}catch{return null}}).filter(Boolean);
+  const ids=[...new Set(dms.map(d=>d.other))];
+  const {data:profiles}=ids.length?await sb.from('profiles').select('id,username').in('id',ids):{data:[]};
+  const names=new Map((profiles||[]).map(p=>[p.id,p.username]));
+  if(dmSelected&&!ids.includes(dmSelected))dmSelected=null;
+  let found=[];
+  if(dmQuery.trim()){const q=dmQuery.replace(/^@/,'');const r=await sb.from('profiles').select('id,username').ilike('username',q+'%').limit(10);found=r.data||[]}
+  let body='';
+  if(dmSelected){
+    const thread=dms.filter(d=>d.other===dmSelected).reverse();
+    body=`<button class="ghost small" id="dback">← Все диалоги</button><h2>@${esc(names.get(dmSelected)||'')}</h2>
+      <div class="card">${thread.map(d=>`<div style="text-align:${d.from_me?'right':'left'};margin:8px 0"><div class="${d.from_me?'bubble-me':'bubble-other'}" style="display:inline-block;padding:8px 12px;border-radius:16px;text-align:left">${esc(d.text)}${d.images.map(u=>`<img class="attach" src="${esc(u)}">`).join('')}</div><div class="meta">${esc(new Date(d.created_at).toLocaleString('ru-RU'))}</div></div>`).join('')||'<p class="muted">Сообщений пока нет.</p>'}</div>
+      <div class="card"><textarea id="dtx" placeholder="Сообщение…"></textarea><input type="file" id="dfile" accept="image/*"><button id="dsend" class="small">Отправить</button><p class="err" id="derr"></p></div>`;
+  }else{
+    body=`<p class="muted">Диалоги</p>`+(ids.map(id=>`<div class="card"><button id="dm-${id}" class="ghost">@${esc(names.get(id)||'')}</button><p class="muted">${esc(dms.find(d=>d.other===id)?.text||'')}</p></div>`).join('')||'<p class="muted">Диалогов пока нет. Найдите пользователя по @ выше.</p>');
+  }
+  VIEW.innerHTML=`<h1>Чат</h1><div class="card"><input id="dq" placeholder="Найдите пользователя по @" value="${esc(dmQuery)}"><button class="small" id="dfind">Найти</button>
+    ${found.length?`<div style="margin-top:10px">${found.map(f=>`<button class="ghost small" id="sel-${f.id}" style="margin:2px">@${esc(f.username)}</button>`).join('')}</div>`:''}</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px"><button class="small">ЛС</button><button class="ghost small" id="chan">Каналы</button></div>${body}`;
+  document.getElementById('dfind').onclick=()=>{dmQuery=document.getElementById('dq').value;messages()};
+  document.getElementById('chan').onclick=()=>{VIEW.innerHTML='<h1>Чат</h1><div class="card"><p class="muted">Каналов пока нет.</p></div>'};
+  found.forEach(f=>document.getElementById('sel-'+f.id).onclick=()=>{dmSelected=f.id;dmQuery='';messages()});
+  ids.forEach(id=>document.getElementById('dm-'+id).onclick=()=>{dmSelected=id;messages()});
+  const back=document.getElementById('dback');if(back)back.onclick=()=>{dmSelected=null;messages()};
+  const send=document.getElementById('dsend');if(send)send.onclick=async()=>{
+    const t=document.getElementById('dtx').value.trim(),f=document.getElementById('dfile').files[0],e=document.getElementById('derr');e.textContent='';
+    if(!t&&!f)return;const urls=[];
+    if(f){const b=await compress(f);const up=await sb.storage.from('posts').upload(`${me}/${Date.now()}.webp`,b,{contentType:'image/webp'});if(!up.error)urls.push(sb.storage.from('posts').getPublicUrl(up.data.path).data.publicUrl)}
+    const {error}=await sb.from('messages').insert({user_id:me,hidden:true,content:JSON.stringify({k:'dm',to:dmSelected,text:t,i:urls})});
+    if(error)e.textContent=error.message;else messages();
+  };
+}
+function rules(){VIEW.innerHTML=`<h1>Правила</h1>
+<div class="card"><b>1. Уважайте других.</b> Оскорбления, травля и дискриминация запрещены.</div>
+<div class="card"><b>2. Без спама.</b> Не публикуйте одно и то же многократно и не рекламируйте сторонние сервисы.</div>
+<div class="card"><b>3. Только свой контент.</b> Не выдавайте чужие работы за свои.</div>
+<div class="card"><b>4. Без опасного содержимого.</b> Угрозы, персональные данные и вредоносные ссылки удаляются.</div>
+<div class="card"><b>5. Жалобы.</b> Нарушения можно отметить кнопкой «Пожаловаться» под записью.</div>`}
+async function profile(){
+  const {data:p}=await sb.from('profiles').select('username').eq('id',user.id).maybeSingle();
+  const name=p?.username||user.email?.split('@')[0]||'';
+  const meta=user.user_metadata||{};
+  const avatar=`${SUPA}/storage/v1/object/public/avatars/${user.id}/avatar.webp`;
+  const banner=meta.bannerUrl||`${SUPA}/storage/v1/object/public/posts/${user.id}/banner.webp`;
+  const isAdmin=user.app_metadata?.role==='admin';
+  VIEW.innerHTML=`<h1>Профиль</h1>
+  <div class="banner" style="background-image:url('${banner}')"></div>
+  <div class="card"><div style="display:flex;align-items:center;gap:16px">
+    <img class="avatar" src="${avatar}" alt="">
+    <div><p style="margin:0">Имя пользователя: <b>@${esc(name)}</b>${isAdmin?'<img src="'+RAW+'creator.png?v=3" style="width:18px;height:18px;vertical-align:middle">':''}</p>
+    <input type="file" id="ava" accept="image/*" class="small"><button class="ghost small" id="saveAva">Аватар</button></div></div></div>
+  <div class="card"><h2>Баннер</h2><input type="file" id="ban" accept="image/*"><button class="ghost small" id="saveBan">Сохранить баннер</button><p class="ok" id="m1"></p></div>
+  <div class="card"><h2>Обо мне</h2><textarea id="bio" maxlength="300" placeholder="Расскажите о себе…">${esc(meta.bio||'')}</textarea><button id="saveBio" class="small">Сохранить</button><p class="ok" id="m2"></p></div>
+  <div class="card"><h2>Сменить пароль</h2><input id="cur" type="password" placeholder="Текущий пароль"><input id="np" type="password" placeholder="Новый пароль"><button id="savePass" class="small">Сменить</button><p class="err" id="m3"></p></div>
+  <button class="ghost" id="out">Выйти</button>`;
+  document.getElementById('saveAva').onclick=async()=>{const f=document.getElementById('ava').files[0];if(!f)return;const b=await compress(f);const r=await sb.storage.from('avatars').upload(`${user.id}/avatar.webp`,b,{upsert:true,contentType:'image/webp'});if(!r.error)profile()};
+  document.getElementById('saveBan').onclick=async()=>{const f=document.getElementById('ban').files[0];if(!f)return;const b=await compress(f);const r=await sb.storage.from('posts').upload(`${user.id}/banner.webp`,b,{upsert:true,contentType:'image/webp'});if(r.error){document.getElementById('m1').textContent='Ошибка';return}const u=sb.storage.from('posts').getPublicUrl(r.data.path).data.publicUrl;await sb.auth.updateUser({data:{bannerUrl:u}});document.getElementById('m1').textContent='Сохранено'};
+  document.getElementById('saveBio').onclick=async()=>{const r=await sb.auth.updateUser({data:{bio:document.getElementById('bio').value}});document.getElementById('m2').textContent=r.error?'Ошибка':'Сохранено'};
+  document.getElementById('savePass').onclick=async()=>{const r=await sb.auth.updateUser({password:document.getElementById('np').value});if(r.error){document.getElementById('m3').textContent=r.error.message;return}await sb.auth.signOut();user=null;location.hash='#/welcome';route()};
+  document.getElementById('out').onclick=async()=>{await sb.auth.signOut();user=null;location.hash='#/welcome';route()};
+}
+const applyTheme=(dark)=>{document.documentElement.classList.toggle('dark',dark);try{localStorage.setItem('theme',dark?'dark':'light')}catch{}};
+const savedTheme=localStorage.getItem('theme');
+applyTheme(savedTheme?savedTheme==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches);
+document.getElementById('themeBtn2').onclick=()=>applyTheme(!document.documentElement.classList.contains('dark'));
+window.addEventListener('hashchange',route);
+sb.auth.getSession().then(({data})=>{user=data.session?.user||null;route()});
+sb.auth.onAuthStateChange((_e,s)=>{user=s?.user||null});
+</script>
+</body>
+</html>
