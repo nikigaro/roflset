@@ -57,7 +57,7 @@ h2{font-size:20px;margin:0 0 12px}
 </div>
 <div class="wrap">
   <aside class="side">
-    <div class="side-brand"><a href="#/welcome"><img src="https://raw.githubusercontent.com/nikigaro/roflset/main/public/logo-rofset.png?v=3" alt=""></a><span class="vbadge">v1</span></div>
+    <div class="side-brand"><a href="#/chat"><img src="https://raw.githubusercontent.com/nikigaro/roflset/main/public/logo-rofset.png?v=3" alt=""></a><span class="vbadge">v1</span></div>
     <nav id="nav"></nav>
   </aside>
   <div class="main" id="view"></div>
@@ -88,7 +88,10 @@ function nav(){
 function route(){
   nav();
   if(!user&&!['#/welcome','#/login','#/register'].includes(location.hash)){location.hash='#/welcome';return}
-  const h=location.hash;
+  if(user&&['#/welcome','#/login','#/register','#/'].includes(location.hash)){
+    history.replaceState(null,'','#/chat');
+  }
+  const h=location.hash||'#/chat';
   if(h==='#/welcome'||h==='#/'||h==='')return welcome();
   if(h==='#/login')return auth(false);
   if(h==='#/register')return auth(true);
