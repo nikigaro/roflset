@@ -68,7 +68,7 @@ async function compress(file){
 }
 function nav(){
   const h=location.hash||'#/welcome';
-  const items=[['#/rules','Правила','news'],['#/chat','Стена','wall'],['#/news','Новости','news2'],['#/messages','Чат','chat'],['#/profile','Профиль','profile']];
+  const items=[['#/rules','Правила','news'],['#/chat','Стена','wall'],['#/news','Новости','news'],['#/messages','Чат','chat'],['#/profile','Профиль','profile']];
   SIDE.innerHTML=items.map(([href,l,i])=>`<a href="${href}" class="${h===href?'active':''}"><img src="${RAW}${i}.png" alt="">${l}</a>`).join('');
 }
 function route(){
